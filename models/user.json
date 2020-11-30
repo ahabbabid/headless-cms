@@ -1,0 +1,18 @@
+{
+  "tableName": "users",
+  "attributes": {
+
+    "name": "string"
+
+
+
+  },
+  "relations":[
+        {
+            "type": "hasMany",
+            "model":"address"
+
+        }
+    ]
+
+}

@@ -1,0 +1,14 @@
+{
+
+    "routes":[
+        {
+            "method":"GET",
+            "path":"/users",
+            "handler":"Users.index"
+
+        }
+
+    ]
+
+
+}

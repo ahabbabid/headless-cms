@@ -1,0 +1,7 @@
+{
+
+    "tableName": "addresses",
+    "attributes":{
+        "address": "string"
+    }
+}

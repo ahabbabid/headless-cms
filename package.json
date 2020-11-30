@@ -1,0 +1,12 @@
+{
+  "name": "headless-cms",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "knex": "^0.21.7",
+    "mysql": "^2.18.1",
+    "objection": "^2.2.3"
+  }
+}
