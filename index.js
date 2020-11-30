@@ -5,8 +5,9 @@ const fs = require("fs");
 const knex = require("./config/database.js");
 const { Model } = require("objection");
 const models = require("./models.js");
-console.log("ay this the real shit:" + models["user"].tableName());
+// console.log("ay this the real shit:" + models["user"].tableName());
 Model.knex(knex);
+knex.migrate.rollback();
 // let models = {};
 // let model = class extends Model {
 //   name = "ahabb";
@@ -124,6 +125,7 @@ app.get("/:resource", (req, res) => {
     .select()
     .then((data) => console.log(data));
 });
+app.post("/:resource", (req, res) => {});
 app.get("/users", (req, res) => {
   res.send("what up");
 });
