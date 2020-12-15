@@ -3,5 +3,11 @@
     "tableName": "addresses",
     "attributes":{
         "address": "string"
-    }
+    },
+    "relations":[
+        {
+            "type":"BelongsToOne",
+            "model": "user"
+        }
+    ]
 }

@@ -1,0 +1,17 @@
+{
+
+    "tableName": "persons",
+    "attributes":{
+        "name": "string",
+        "phone_number": "integer",
+        "yolo": "string"
+    },
+    "relations":[
+        {
+            "type": "ManyToMany",
+            "join_table":"persons_pictures",
+            "model": "picture"
+        }
+    ]
+
+}

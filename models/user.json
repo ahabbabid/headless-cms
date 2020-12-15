@@ -2,7 +2,8 @@
   "tableName": "users",
   "attributes": {
 
-    "name": "string"
+    "firstName": "string",
+    "lastName": "string"
 
 
 

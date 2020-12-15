@@ -6,6 +6,5 @@ module.exports = {
       .table("users")
       .select()
       .then((data) => console.log(data));
-    // res.send("yolo");
   },
 };

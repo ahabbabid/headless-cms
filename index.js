@@ -1,13 +1,19 @@
 const express = require("express");
+const bodyParser = require("body-parser");
 const app = express();
 const port = 3000;
 const fs = require("fs");
 const knex = require("./config/database.js");
 const { Model } = require("objection");
-const models = require("./models.js");
-// console.log("ay this the real shit:" + models["user"].tableName());
+const { user } = require("./models.js");
+const addRelation = require("./utils/add_relation.js");
+const cors = require("cors");
+app.use(cors());
+// consolre.log("ay this the real shit:" + models["user"].tableName());
+const make_tables = require("./make_migrations.js");
 Model.knex(knex);
-knex.migrate.rollback();
+// knex.migrate.latest();
+// knex.migrate.rollback();
 // let models = {};
 // let model = class extends Model {
 //   name = "ahabb";
@@ -25,7 +31,7 @@ knex.migrate.rollback();
 //   return "users";
 // };
 console.log("query:");
-models["user"]
+user
   .query()
   .findById(1)
   .then((user) => {
@@ -107,7 +113,8 @@ let r = JSON.parse(fs.readFileSync("routes.json"));
 //   console.log(r);
 // });
 console.log(r);
-
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 for (route of r.routes) {
   const [controller, methodName] = route.handler.split(".");
 
@@ -125,7 +132,52 @@ app.get("/:resource", (req, res) => {
     .select()
     .then((data) => console.log(data));
 });
-app.post("/:resource", (req, res) => {});
+app.post("/resource", (req, res) => {
+  console.log(req.body);
+  let model = {
+    tableName:
+      req.body.resourceName[req.body.resourceName.length - 1] == "s"
+        ? req.body.resourceName + "es"
+        : req.body.resourceName + "s",
+    attributes: {},
+    relations: [],
+  };
+  for (let attribute of req.body.attributes) {
+    if (attribute.type !== "relation") {
+      model.attributes[attribute.name] = attribute.type;
+    } else {
+      const relationObject = {
+        type: attribute.relationType,
+        model: attribute.model,
+      };
+      if (attribute.relationType === "ManyToMany") {
+        const relatedTable =
+          attribute.model[attribute.model.length - 1] === "s"
+            ? `${attribute.model}es`
+            : `${attribute.model}s`;
+        const joinTable = `${model.tableName}_${relatedTable}`;
+        model.relations.push({
+          ...relationObject,
+          join_table: joinTable,
+        });
+        addRelation(attribute.model, req.body.resourceName, "ManyToMany");
+      } else if (
+        attribute.relationType === "HasOne" ||
+        attribute.relationType === "HasMany"
+      ) {
+        addRelation(attribute.model, req.body.resourceName, "BelongsToOne");
+
+        model.relations.push(relationObject);
+      }
+    }
+  }
+  console.log(JSON.stringify(model));
+  // fs.writeFileSync(
+  //   `models/${req.body.resourceName}.json`,
+  //   JSON.stringify(model)
+  // );
+  // make_tables();
+});
 app.get("/users", (req, res) => {
   res.send("what up");
 });

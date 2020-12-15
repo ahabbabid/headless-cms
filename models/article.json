@@ -1,0 +1,15 @@
+{
+
+    "tableName": "articles",
+    "attributes":{
+        "content": "string"
+    },
+    "relations":[
+        {
+            "type": "ManyToMany",
+            "join_table": "articles_tags",
+            "model": "tag"
+        }
+    ]
+
+}

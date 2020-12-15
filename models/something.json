@@ -1,0 +1,1 @@
+{"tableName":"somethings","attributes":{"attr1":"string"},"relations":[{"model":"users"}]}

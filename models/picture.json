@@ -1,0 +1,19 @@
+{
+
+    "tableName": "pictures",
+    "attributes":{
+        "path": "string"
+    },
+    "relations":[
+        {
+            "type":"BelongsToOne",
+            "model": "person"
+        },
+        {
+            "type":"ManyToMany",
+            "join_table": "persons_pictures",
+            "model": "person"
+        }
+
+    ]
+}

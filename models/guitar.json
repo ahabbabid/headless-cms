@@ -1,0 +1,1 @@
+{"tableName":"guitars","attributes":{"name":"string"},"relations":[{"type":"ManyToMany","model":"picture"}]}
