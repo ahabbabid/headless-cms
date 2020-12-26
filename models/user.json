@@ -10,7 +10,7 @@
   },
   "relations":[
         {
-            "type": "hasMany",
+            "type": "HasOne",
             "model":"address"
 
         }

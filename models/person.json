@@ -1,17 +1,1 @@
-{
-
-    "tableName": "persons",
-    "attributes":{
-        "name": "string",
-        "phone_number": "integer",
-        "yolo": "string"
-    },
-    "relations":[
-        {
-            "type": "ManyToMany",
-            "join_table":"persons_pictures",
-            "model": "picture"
-        }
-    ]
-
-}
+{"tableName":"persons","attributes":{"firstName":"string","lastName":"string"},"relations":[{"type":"HasOne","model":"address"}]}

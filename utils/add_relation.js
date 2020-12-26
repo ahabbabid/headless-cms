@@ -1,23 +1,23 @@
 const fs = require("fs");
-module.exports = (modelName, relatedModel, relation) => {
+module.exports = (relation, model, joinTable) => {
   console.log("called");
-  let fileData = JSON.parse(fs.readFileSync(`./models/${modelName}.json`));
-  if (relation === "BelongsToOne") {
-    fileData.relations.push({
-      type: "BelongsToOne",
-      model: relatedModel,
+  const relationObject = {
+    type: relation.type,
+    model: relation.model,
+  };
+  if (relation.type === "BelongsToOne") {
+    model.data.relations.push({
+      ...relationObject,
+      inverse: relation.inverse,
     });
-  } else if (relation === "ManyToMany") {
-    const relatedTable =
-      relatedModel[relatedModel.length - 1] === "s"
-        ? `${relatedModel}es`
-        : `${relatedModel}s`;
-    fileData.relations.push({
-      type: "ManyToMany",
-      model: relatedModel,
-      join_table: `${fileData.tableName}_${relatedTable}`,
+  } else if (relation.type === "ManyToMany") {
+    model.data.relations.push({
+      ...relationObject,
+      join_table: joinTable,
     });
+  } else if (relation.type === "HasOne" || "HasMany") {
+    model.data.relations.push(relationObject);
   }
-  console.log(fileData);
-  //   fs.writeFileSync(`./models/${modelName}.js`, JSON.stringify(fileData));
+  console.log(model.data);
+  // fs.writeFileSync(`./models/${modelName}.json`, JSON.stringify(fileData));
 };

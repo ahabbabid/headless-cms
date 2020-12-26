@@ -5,105 +5,37 @@ const port = 3000;
 const fs = require("fs");
 const knex = require("./config/database.js");
 const { Model } = require("objection");
-const { user } = require("./models.js");
 const addRelation = require("./utils/add_relation.js");
+const sendResponse = require("./utils/send_response.js");
+const fetchModelFromTablename = require("./utils/fetch_model_from_tablename.js");
 const cors = require("cors");
-app.use(cors());
+const {
+  handleCustomException,
+  throwCustomException,
+  handleGeneralException,
+} = require("./utils/handle_errors.js");
+app.use(cors({ origin: "http://localhost:3000" }));
 // consolre.log("ay this the real shit:" + models["user"].tableName());
 const make_tables = require("./make_migrations.js");
+const models = require("./models.js");
+const get_model_data = require("./utils/get_model_data.js");
 Model.knex(knex);
-// knex.migrate.latest();
-// knex.migrate.rollback();
-// let models = {};
-// let model = class extends Model {
-//   name = "ahabb";
-// };
-// class User extends Model {
-//   //static get relationMappings
-// }
-// models[model.name] = model;
-// // console.log(models[model.name].name);
-// User.relationMappings = function () {
-//   console.log("what up chief");
-//   return "wa";
-// };
-// User.tableName = function () {
-//   return "users";
-// };
-console.log("query:");
-user
-  .query()
-  .findById(1)
-  .then((user) => {
-    console.log(user);
-  });
-
-// User.prototype.ahabb = function () {
-//   console.log("ahabb is awesome");
-// };
-// User.relationMappings();
-// let ahabb = new User();
-//ahabb.relationMappings();
-const object = {
-  tableName: "users",
-  attributes: {
-    id: "number",
-    name: "string",
-    address: {
-      //model: "address",
-      via: "user",
-    },
-  },
-};
-
-// let model = class extends Model {};
-// models[tableName];
-
-if (!object.attributes.address.model) {
-  console.log("true");
-}
-
-const object2 = {
-  tableName: "addresses",
-  attributes: {
-    id: "number",
-    user: {
-      model: "user",
-    },
-  },
-};
-
+// make_tables();
 // TODO: define database structure for different types of relationships
 
-knex.schema.hasTable("users").then(function (exists) {
-  if (!exists) {
-    return knex.schema
-      .createTable("users", function (table) {
-        for (field in object) {
-          //console.log(field)
-          if (object[field] == "number") table.increments();
-          if (object[field] == "string") table.string(field);
-        }
-      })
-      .then(() => console.log("successfull"))
-      .catch((e) => console.log(e));
-  } else console.log("yolo");
-});
-
-//console.log(table['id'])
-// knex.schema.createTable('users', function (table) {
-//     for(field in object.attributes){
-//         //console.log(field)
-//         if(field.model){
-//           console.log
+// knex.schema.hasTable("users").then(function (exists) {
+//   if (!exists) {
+//     return knex.schema
+//       .createTable("users", function (table) {
+//         for (field in object) {
+//           //console.log(field)
+//           if (object[field] == "number") table.increments();
+//           if (object[field] == "string") table.string(field);
 //         }
-
-//     }
-
-// }).then(()=> console.log('successfull')).catch(e=>console.log(e))
-// app.get("/:resource", (req, res) => {
-//     console.log(knex.table().select(req.params.resource)
-// //   res.send(knex.table().select(req.params.resource));
+//       })
+//       .then(() => console.log("successfull"))
+//       .catch((e) => console.log(e));
+//   } else console.log("yolo");
 // });
 
 let r = JSON.parse(fs.readFileSync("routes.json"));
@@ -115,25 +47,139 @@ let r = JSON.parse(fs.readFileSync("routes.json"));
 console.log(r);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-for (route of r.routes) {
-  const [controller, methodName] = route.handler.split(".");
+// for (route of r.routes) {
+//   const [controller, methodName] = route.handler.split(".");
 
-  const wassup = require("./controllers/" + controller + ".js");
-  console.log(wassup);
-  if (route.method == "GET") {
-    app.get(route.path, (req, res) => {
-      wassup[methodName]({ req, res });
-    });
+//   const wassup = require("./controllers/" + controller + ".js");
+//   console.log(wassup);
+//   if (route.method == "GET") {
+//     app.get(route.path, (req, res) => {
+//       wassup[methodName]({ req, res });
+//     });
+//   }
+// }
+app.get("/resources", (req, res) => {
+  let models = fs.readdirSync("./models");
+  models = models.map((model) => model.split(".")[0]);
+  res.json(models);
+});
+app.get("/:resource/schema", async (req, res) => {
+  const [modelName, model] = fetchModelFromTablename(req.params.resource);
+  // if (modelName) {
+  const data = get_model_data(modelName);
+  // if (data)
+  sendResponse({ data: data, message: "success", statusCode: 200 }, res);
+  // else handleCustomException(new Error(), res);
+  // } else handleCustomException(new Error(), res);
+});
+app.get("/:resource", async (req, res) => {
+  const [modelName, model] = fetchModelFromTablename(req.params.resource);
+  if (model)
+    try {
+      const result = await model.query();
+      sendResponse({ data: result, message: "Success", statusCode: 200 }, res);
+    } catch (e) {
+      handleCustomException(e, res);
+    }
+  else handleCustomException(new Error(), res);
+});
+app.get("/:resource/:id", async (req, res) => {
+  const [modelName, model] = fetchModelFromTablename(req.params.resource);
+  if (model)
+    try {
+      const result = await model.query().findById(req.params.id);
+      if (!result)
+        throwCustomException(
+          400,
+          `No resource with id: ${req.params.id} found`
+        );
+      sendResponse({ data: result, message: "Success", statusCode: 200 }, res);
+    } catch (e) {
+      handleCustomException(e, res);
+    }
+  else handleCustomException(new Error(), res);
+});
+// app.delete("/:resource/:id", asnc);
+app.delete("/:resource/:id", async (req, res) => {
+  const model = fetchModelFromTablename(req.params.resource);
+  if (model)
+    try {
+      const result = await model.query().deleteById(req.params.id);
+      sendResponse({ data: "", message: "Success", statusCode: 200 }, res);
+    } catch (e) {
+      handleCustomException(e, res);
+    }
+  else handleCustomException(new Error(), res);
+});
+/*
+
+*/
+app.post("/:resource", async (req, res) => {
+  const [modelName, model] = fetchModelFromTablename(req.params.resource);
+  const schema = get_model_data(modelName);
+
+  const relations = model.getRelations();
+  const newEntryData = {
+    attributes: {},
+    relations: {},
+  };
+  for (key of Object.keys(schema.attributes)) {
+    newEntryData.attributes[key] = req.body.attributes[key];
   }
-}
-app.get("/:resource", (req, res) => {
-  knex
-    .table(req.params.resource)
-    .select()
-    .then((data) => console.log(data));
+  // console.log(model.getRelations());
+  for (key of Object.keys(relations)) {
+    if (req.body.relations[key])
+      newEntryData.relations[key] = req.body.relations[key];
+  }
+
+  console.log(modelName);
+  if (model) {
+    try {
+      // console.log(model.getRelations());
+      const entry = await model.query().insert(newEntryData.attributes);
+      for (key of Object.keys(newEntryData.relations)) {
+        let relatedModel = relations[key].relatedModelClass;
+
+        if (
+          Array.isArray(newEntryData.relations[key]) &&
+          (relations[key] instanceof Model.HasManyRelation ||
+            relations[key] instanceof Model.ManyToManyRelation)
+        ) {
+          console.log("herer");
+          for (relatedEntryId of newEntryData.relations[key]) {
+            let relatedEntry = await relatedModel
+              .query()
+              .findById(relatedEntryId);
+            console.log(relatedEntry);
+            await entry.$relatedQuery(key).relate(relatedEntry);
+          }
+        } else if (
+          typeof newEntryData.relations[key] === "number" &&
+          relations[key] instanceof Model.HasOneRelation
+        ) {
+          let relatedEntry = await relatedModel
+            .query()
+            .findById(newEntryData.relations[key]);
+          await entry.$relatedQuery(key).relate(relatedEntry);
+        } else if (
+          typeof newEntryData.relations[key] === "number" &&
+          relations[key] instanceof Model.BelongsToOneRelation
+        ) {
+          let relatedEntry = await relatedModel
+            .query()
+            .findById(newEntryData.relations[key]);
+          await entry.$relatedQuery(key).relate(relatedEntry);
+        }
+      }
+      sendResponse({ data: entry, message: "Success", statusCode: 200 }, res);
+    } catch (e) {
+      handleCustomException(e, res);
+      console.log(e);
+    }
+  } else handleCustomException(new Error(), res);
 });
 app.post("/resource", (req, res) => {
-  console.log(req.body);
+  // console.log(req.body);
   let model = {
     tableName:
       req.body.resourceName[req.body.resourceName.length - 1] == "s"
@@ -146,6 +192,9 @@ app.post("/resource", (req, res) => {
     if (attribute.type !== "relation") {
       model.attributes[attribute.name] = attribute.type;
     } else {
+      const relatedModelData = JSON.parse(
+        fs.readFileSync(`./models/${attribute.model}.json`)
+      );
       const relationObject = {
         type: attribute.relationType,
         model: attribute.model,
@@ -160,14 +209,41 @@ app.post("/resource", (req, res) => {
           ...relationObject,
           join_table: joinTable,
         });
-        addRelation(attribute.model, req.body.resourceName, "ManyToMany");
+        addRelation(
+          { model: req.body.resourceName, type: "ManyToMany" },
+          { name: attribute.model, data: relatedModelData },
+          joinTable
+        );
       } else if (
         attribute.relationType === "HasOne" ||
         attribute.relationType === "HasMany"
       ) {
-        addRelation(attribute.model, req.body.resourceName, "BelongsToOne");
+        addRelation(
+          { model: req.body.resourceName, type: "BelongsToOne" },
+          { name: attribute.model, data: relatedModelData }
+        );
 
         model.relations.push(relationObject);
+      } else if (attribute.relationType === "OneToOne") {
+        addRelation(
+          { model: req.body.resourceName, type: "HasOne" },
+          { name: attribute.model, data: relatedModelData }
+        );
+        model.relations.push({
+          type: "BelongsToOne",
+          model: attribute.model,
+          inverse: "OneToOne",
+        });
+      } else if (attribute.relationType === "ManyToOne") {
+        addRelation(
+          { model: req.body.resourceName, type: "HasMany" },
+          { name: attribute.model, data: relatedModelData }
+        );
+        models.relations.push({
+          type: "BelongsToOne",
+          model: attribute.model,
+          inverse: "ManyToOne",
+        });
       }
     }
   }
@@ -176,15 +252,8 @@ app.post("/resource", (req, res) => {
   //   `models/${req.body.resourceName}.json`,
   //   JSON.stringify(model)
   // );
-  // make_tables();
+  // makeTable(model, req.body.resourceName);
 });
-app.get("/users", (req, res) => {
-  res.send("what up");
-});
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
-
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });

@@ -34,8 +34,8 @@ for (file of files) {
           relation: Model.HasOneRelation,
           modelClass: relatedModel,
           join: {
-            from: file.fileName + ".id",
-            to: relation.model + "." + file.fileName + "Id",
+            from: `${model.tableName}.id`,
+            to: `${relatedModel.tableName}.${file.fileName}Id`,
           },
         };
         if (!relatedModel.relationMappings) {
@@ -46,8 +46,8 @@ for (file of files) {
             relation: Model.BelongsToOneRelation,
             modelClass: model,
             join: {
-              from: relatedModel.tableName + "." + file.fileName + "Id",
-              to: file.fileName + ".id",
+              from: `${relatedModel.tableName}.${file.fileName}Id`,
+              to: `${file.fileName}.id`,
             },
           };
         }
@@ -63,8 +63,8 @@ for (file of files) {
           relation: Model.HasManyRelation,
           modelClass: relatedModel,
           join: {
-            from: model.tableName + ".id",
-            to: relatedModel.tableName + "." + file.fileName + "Id",
+            from: `${model.tableName}.id`,
+            to: `${relatedModel.tableName}.${file.fileName}Id`,
           },
         };
         if (!relatedModel.relationMappings) {
@@ -75,8 +75,8 @@ for (file of files) {
             relation: Model.BelongsToOneRelation,
             modelClass: model,
             join: {
-              from: relatedModel.tableName + "." + file.fileName + "Id",
-              to: model.tableName + ".id",
+              from: `${relatedModel.tableName}.${file.fileName}Id`,
+              to: `${model.tableName}.id`,
             },
           };
         }
@@ -89,8 +89,8 @@ for (file of files) {
           relation: Model.BelongsToOneRelation,
           modelClass: relatedModel,
           join: {
-            from: relatedModel.tableName + "." + file.fileName + "Id",
-            to: model.tableName + ".id",
+            from: `${model.tableName}.${relation.model}Id`,
+            to: `${relatedModel.tableName}.id`,
           },
         };
         if (!relatedModel.relationMappings) {
@@ -98,14 +98,18 @@ for (file of files) {
         }
         if (!relatedModel.relationMappings[file.fileName]) {
           relatedModel.relationMappings[file.fileName] = {
-            relation: Model.BelongsToOneRelation,
+            relation:
+              relation.inverse === "OneToOne"
+                ? Model.HasOneRelation
+                : Model.HasManyRelation,
             modelClass: model,
             join: {
-              from: relatedModel.tableName + "." + file.fileName + "Id",
-              to: file.fileName + ".id",
+              from: `${model.tableName}.id`,
+              to: `${relatedModel.tableName}.${file.fileName}Id`,
             },
           };
         }
+        console.log(relatedModel.relationMappings[file.fileName].relation);
       } else if (relation.type == "ManyToMany") {
         let relatedModel = models[relation.model];
         if (!model.relationMappings) {
@@ -146,12 +150,13 @@ for (file of files) {
     }
   }
 }
-console.log(models["address"]);
-models["article"]
+console.log(models["address"].relationMappings.user.join);
+models["address"]
   .query()
   .findById(1)
-  .then((result) =>
-    result.$relatedQuery("tag").then((yolo) => console.log(yolo))
-  );
+  .then((result) => {
+    console.log(result);
+    result.$relatedQuery("user").then((yolo) => console.log(yolo));
+  });
 //console.log(models["address"].tableName);
 module.exports = models;

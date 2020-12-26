@@ -1,1 +1,1 @@
-{"tableName":"laptops","attributes":{"name":"string"},"relations":[{"type":"BelongsToOne","model":"person"}]}
+{"tableName":"laptops","attributes":{"name":"string"},"relations":[{"type":"BelongsToOne","model":"user"}]}

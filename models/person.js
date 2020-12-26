@@ -1,0 +1,1 @@
+{"tableName":"users","attributes":{"firstName":"string","lastName":"string"},"relations":[{"type":"HasOne","model":"address"}]}
